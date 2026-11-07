@@ -6,6 +6,7 @@ uses them; ActionDecoder predicts K candidate level-1 macro-action plans.
 """
 
 import hashlib
+import os
 from pathlib import Path
 import sys
 
@@ -24,6 +25,12 @@ import planning_eval as evaluation
 WTA_EPS = 0.05
 AUG_PROB = 0.5
 AUG_PERTURB_STD = 0.5
+
+
+def relpath(path):
+    """Path as recorded in outputs: relative to the repository root, or to the cwd outside it."""
+    resolved = Path(path).expanduser().resolve()
+    return str(resolved.relative_to(ROOT)) if resolved.is_relative_to(ROOT) else os.path.relpath(resolved)
 
 
 def sha256(path):

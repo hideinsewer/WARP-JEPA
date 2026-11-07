@@ -178,10 +178,10 @@ def main():
                                             for i in range(len(pool))][2:]))
             latency[h] = row
     config = dict(git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-                  val_cache=str(VAL), val_cache_sha256=D.sha256(VAL), per_h=args.per_h,
+                  val_cache=D.relpath(VAL), val_cache_sha256=D.sha256(VAL), per_h=args.per_h,
                   released_per_h=args.released_per_h, seed=args.seed, gd_steps=GD_KS, refine_steps=REFINE_RS,
                   cost_kwargs=kw, gpu=torch.cuda.get_device_name(),
-                  proposals={label: dict(path=str(path), sha256=D.sha256(path), args=ck['args'],
+                  proposals={label: dict(path=D.relpath(path), sha256=D.sha256(path), args=ck['args'],
                                          git_commit=ck['git_commit'])
                              for label, (_, ck, path) in nets.items()})
     report = dict(config=config, by_horizon=results, pooled=pooled, latency_ms_median_batch1=latency)

@@ -127,7 +127,7 @@ def main():
                                           embed_dim=save_args['embed_dim'],
                                           block_dim=save_args['block_dim'])
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    config = dict(save_args, git_commit=commit, cache=str(cache),
+    config = dict(save_args, git_commit=commit, cache=D.relpath(cache),
                   cache_sha256=D.sha256(cache), cache_attrs=train.attrs,
                   model_checkpoint_sha256=parts.checkpoint_sha256,
                   trainable_parameters=n_params, mlp_target_parameters=mlp_target,

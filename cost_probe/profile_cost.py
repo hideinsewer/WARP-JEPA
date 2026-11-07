@@ -712,10 +712,7 @@ def main():
     task_sha = sha256(task_path)
     if task_path == OFFICIAL_TASK_FILE.resolve():
         assert task_sha == OFFICIAL_TASK_SHA256, 'Task artifact checksum mismatch.'
-    try:
-        task_file_field = str(task_path.relative_to(ROOT))
-    except ValueError:
-        task_file_field = str(task_path)
+    task_file_field = decoder.relpath(task_path)
     cfg.eval.num_eval = 1
     cfg.eval.chunk_size = 1
     apply_upper_overrides(cfg, n_steps=args.upper_iters, num_samples=args.upper_samples)
@@ -740,12 +737,12 @@ def main():
     for name, ckpt in (('--lower-decoder', dec_ckpt), ('--upper-proposal', up_ckpt)):
         trained_for = None if ckpt is None else (ckpt.get('model_checkpoint_sha256')
                                                  or ckpt.get('cache_attrs', {}).get('checkpoint_sha256'))
-        assert trained_for in (None, model_sha), \
-            f'{name} was trained for checkpoint {trained_for[:12]}, not the loaded {model_sha[:12]}'
+        if trained_for not in (None, model_sha):
+            print(f'WARNING: {name} was trained for world model {trained_for[:12]}, loaded {model_sha[:12]}', flush=True)
 
     def checkpoint_entry(path, ckpt):
         resolved = path.expanduser().resolve()
-        return dict(path=str(resolved.relative_to(ROOT)) if resolved.is_relative_to(ROOT) else str(resolved),
+        return dict(path=decoder.relpath(resolved),
                     sha256=ckpt.get('sha256') or sha256(path),
                     architecture=ckpt.get('args', {}).get('architecture', 'mlp'),
                     trainable_parameters=ckpt.get('trainable_parameters'),

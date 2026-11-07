@@ -147,7 +147,7 @@ def main():
                                           embed_dim=save_args['embed_dim'], max_h=args.max_h)
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     cache_sha = D.sha256(cache)
-    config = dict(save_args, git_commit=commit, cache=str(cache), cache_sha256=cache_sha,
+    config = dict(save_args, git_commit=commit, cache=D.relpath(cache), cache_sha256=cache_sha,
                   cache_attrs=data.attrs, load_seconds=load_seconds,
                   model_checkpoint_sha256=parts.checkpoint_sha256,
                   trainable_parameters=n_params, mlp_target_parameters=mlp_target,

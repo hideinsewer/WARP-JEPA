@@ -112,6 +112,37 @@ python cost_probe/three_level.py eval --env <env> --model-seed <S> --tasks 50 --
 `four_level.py` has the same interface (`train-l1` ... `train-l4`; `eval` with `--l4-proposal --l3-decoder
 --l2-decoder --l1-decoder`) and uses caches built with `--levels 4`.
 
+## Pretrained proposers
+
+The trained proposers of every model in the paper (180 checkpoints, each with its `config.json` and
+`train_log.jsonl`) are attached to the [v1.0 release](https://github.com/hideinsewer/WARP-JEPA/releases/tag/v1.0):
+
+| Archive | Contents |
+| --- | --- |
+| `warp_jepa_proposers_l2.tar` | two-level models: `decoder/` (level 1) and `upper/` (level 2) for Push-T, FourRoom, Cube, AntMaze, seeds 42-44 |
+| `warp_jepa_proposers_l3.tar` | three-level models: `l3/<env>_l3_{l1dec,l2dec,l3up}_<arch>_s<S>_*` |
+| `warp_jepa_proposers_l4.tar` | four-level models: `l4/<env>_l4_{l1dec,l2dec,l3dec,l4up}_<arch>_s<S>_*` |
+
+```bash
+for p in l2 l3 l4; do
+  curl -LO https://github.com/hideinsewer/WARP-JEPA/releases/download/v1.0/warp_jepa_proposers_$p.tar
+done
+curl -LO https://github.com/hideinsewer/WARP-JEPA/releases/download/v1.0/SHA256SUMS && sha256sum -c SHA256SUMS
+for p in l2 l3 l4; do tar -xf warp_jepa_proposers_$p.tar -C cost_probe/runs --strip-components=1; done
+```
+
+Naming: `*_bc005_*`/`*_bc1_*` = lambda_bc 0.05 (top level) / 1 (subordinate levels); no architecture tag or `mlp` =
+residual MLP, `tf_ar_wm` = world-model-in-the-loop Transformer. In the L2 archive, `*_h200t211` are the MLP proposers
+(MM), `*_tf_ar_wm_*_h200tf2` the 1-layer Transformers (TM uses `upper/<env>_up_tf_ar_wm_bc005_s<S>_h200tf2` with
+`decoder/<env>_l1dec_bc1_s<S>_h200t211`; TT also uses `decoder/<env>_l1dec_tf_ar_wm_bc1_s<S>_h200tf2`), and
+`*_h200tf1` the 4-layer Push-T ablation variants (`tf_parallel`, `tf_ar_action`, `tf_ar_wm`).
+
+The proposers were trained on our own H-JEPA world models (official configurations, seeds 42-44, one H200 each).
+`CHECKPOINTS_MANIFEST.json` lists the sha256 of every proposer and of the world model it was trained on. They can be
+loaded with any H-JEPA checkpoint of the same configuration; the planners then print a warning instead of failing.
+Proposers act in the latent space of their world model, so with a different checkpoint (e.g. one you retrain) expect
+lower success; retrain the proposers on that checkpoint (sections 3 and 4) to reproduce the paper.
+
 ## 5. Analysis and diagnostics
 
 - `compare_runs.py --reference RUN --out FILE RUN...`: paired task-by-task comparison (Wilson intervals, exact

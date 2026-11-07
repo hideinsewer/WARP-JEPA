@@ -513,7 +513,7 @@ def cmd_train_l1(args):
     dec.prior_mean.copy_(parts.l2_prior_mean)
     dec.prior_std.copy_(parts.l2_prior_std)
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    config = dict(save_args, git_commit=commit, cache=str(cache),
+    config = dict(save_args, git_commit=commit, cache=D.relpath(cache),
                   cache_sha256=D.sha256(cache), cache_attrs=train.attrs,
                   model_checkpoint_sha256=parts.checkpoint_sha256,
                   trainable_parameters=TH.trainable_parameters(dec),
@@ -588,7 +588,7 @@ def cmd_train_l2(args):
     dec.lo.copy_(parts.l2_lo)
     dec.hi.copy_(parts.l2_hi)
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    config = dict(save_args, git_commit=commit, cache=str(cache),
+    config = dict(save_args, git_commit=commit, cache=D.relpath(cache),
                   cache_sha256=D.sha256(cache), cache_attrs=data.attrs,
                   model_checkpoint_sha256=parts.checkpoint_sha256,
                   trainable_parameters=TH.trainable_parameters(dec),
@@ -661,7 +661,7 @@ def cmd_train_l3(args):
     dec.lo.copy_(parts.l3_lo)
     dec.hi.copy_(parts.l3_hi)
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    config = dict(save_args, git_commit=commit, cache=str(cache),
+    config = dict(save_args, git_commit=commit, cache=D.relpath(cache),
                   cache_sha256=D.sha256(cache), cache_attrs=data.attrs,
                   model_checkpoint_sha256=parts.checkpoint_sha256,
                   trainable_parameters=TH.trainable_parameters(dec),
@@ -741,7 +741,7 @@ def cmd_train_l4(args):
     net.lo.copy_(p_lo)
     net.hi.copy_(p_hi)
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    config = dict(save_args, git_commit=commit, cache=str(cache),
+    config = dict(save_args, git_commit=commit, cache=D.relpath(cache),
                   cache_sha256=D.sha256(cache), cache_attrs=data.attrs,
                   model_checkpoint_sha256=parts.checkpoint_sha256,
                   trainable_parameters=TH.trainable_parameters(net))
@@ -852,14 +852,15 @@ def cmd_eval(args):
         up4_obj, up4_ck = U.load_upper_proposal(args.l4_proposal, torch.device('cuda'))
     for flag, ck in (('--l1-decoder', dec1_ck), ('--l2-decoder', dec2_ck),
                      ('--l3-decoder', dec3_ck), ('--l4-proposal', up4_ck)):
-        if ck is not None:
-            assert ck.get('model_checkpoint_sha256') == model_sha, (flag, model_sha)
+        if ck is not None and ck.get('model_checkpoint_sha256') != model_sha:
+            print(f'WARNING: {flag} was trained for world model {str(ck.get("model_checkpoint_sha256"))[:12]}, '
+                  f'loaded {model_sha[:12]}', flush=True)
 
     def ck_entry(path, ck):
         if ck is None:
             return None
         resolved = path.expanduser().resolve()
-        return dict(path=str(resolved.relative_to(ROOT)) if resolved.is_relative_to(ROOT) else str(resolved),
+        return dict(path=D.relpath(resolved),
                     sha256=PC.sha256(path),
                     architecture=ck.get('args', {}).get('architecture', 'mlp'),
                     git_commit=ck['git_commit'])
